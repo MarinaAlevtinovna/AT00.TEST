@@ -1,38 +1,31 @@
-import pytest
-import responses
+from unittest import mock
+import requests
 from theCatAPI import get_random_cat_image
 
-@responses.activate
-def test_successful_request():
+@mock.patch("requests.get")
+def test_successful_request(mock_get):
     mock_url = "https://cdn2.thecatapi.com/images/mock_image.jpg"
-    responses.add(
-        responses.GET,
-        "https://api.thecatapi.com/v1/images/search",
-        json=[{"url": mock_url}],
-        status=200
-    )
+    mock_response = mock.Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = [{"url": mock_url}]
+    mock_get.return_value = mock_response
 
     result = get_random_cat_image()
     assert result == mock_url
 
-@responses.activate
-def test_unsuccessful_request():
-    responses.add(
-        responses.GET,
-        "https://api.thecatapi.com/v1/images/search",
-        status=404
-    )
+@mock.patch("requests.get")
+def test_unsuccessful_request(mock_get):
+    mock_response = mock.Mock()
+    mock_response.status_code = 404
+    mock_get.return_value = mock_response
 
     result = get_random_cat_image()
     assert result is None
 
-@responses.activate
-def test_request_exception():
-    responses.add(
-        responses.GET,
-        "https://api.thecatapi.com/v1/images/search",
-        body=Exception("Network error")
-    )
+@mock.patch("requests.get")
+def test_request_exception(mock_get):
+    mock_get.side_effect = requests.RequestException
 
     result = get_random_cat_image()
     assert result is None
+
